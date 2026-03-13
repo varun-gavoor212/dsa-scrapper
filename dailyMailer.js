@@ -1,5 +1,8 @@
+require('dotenv').config();
+
 const nodemailer = require("nodemailer");
 const sql = require("mssql");
+const { generateEmailTemplate } = require("./emailTemplate");
 
 const dbConfig = {
   user: process.env.DB_USER,
@@ -50,22 +53,13 @@ async function sendDailyProblems() {
 
       const problem = problemResult.recordset[0];
 
-      const motivation = user.wantsMotivation
-        ? "\n\n🔥 Keep pushing. Consistency beats motivation."
-        : "";
+      const emailContent = await generateEmailTemplate(problem, user.wantsMotivation);
 
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: user.email,
-        subject: "📌 Your Daily DSA Problem",
-        text: `
-Problem: ${problem.title}
-Category: ${problem.category}
-Difficulty: ${problem.difficulty}
-Link: ${problem.link}
-
-${motivation}
-`
+        subject: emailContent.subject,
+        text: emailContent.text
       });
 
       console.log(`✅ Sent to ${user.email}`);
