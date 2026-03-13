@@ -1,20 +1,14 @@
-const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function generateMotivation() {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: 'You are a motivational coach. Generate a short, energetic motivation quote for coding and problem-solving.' },
-        { role: 'user', content: 'Give me a daily motivation quote for DSA practice.' }
-      ],
-      max_tokens: 50,
-    });
-    return response.choices[0].message.content.trim();
+    const result = await model.generateContent(
+      "Write a short, energetic motivational message for someone solving DSA problems daily. Keep it under 100 characters."
+    );
+    return result.response.text().trim();
   } catch (error) {
     console.error('Error generating motivation:', error);
     return '🔥 Keep pushing. Consistency beats motivation.'; // Fallback
