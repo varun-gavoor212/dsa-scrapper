@@ -68,7 +68,8 @@ async function sendDailyProblems() {
         from: process.env.EMAIL_USER,
         to: user.email,
         subject: emailContent.subject,
-        text: emailContent.text
+        text: emailContent.text,
+        html: emailContent.html
       });
 
       console.log(`✅ Sent to ${user.email}`);

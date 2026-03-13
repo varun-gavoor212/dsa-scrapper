@@ -17,11 +17,19 @@ async function generateMotivation() {
 }
 
 function generateEmailTemplate(problem, motivation) {
+  const plainText = `
+Problem: ${problem.title}
+Category: ${problem.category}
+Difficulty: ${problem.difficulty}
+Link: ${problem.link}
 
-return {
-subject: `Today's DSA Challenge: ${problem.title}`,
+${motivation}
+`;
 
-html: `
+  return {
+    subject: `Today's DSA Challenge: ${problem.title}`,
+    text: plainText,
+    html: `
 <div style="margin:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;padding:40px">
 
 <div style="max-width:700px;margin:auto;background:#111827;border-radius:12px;overflow:hidden">
@@ -116,8 +124,7 @@ DSA Daily Bot
 
 </div>
 `
-}
-
+  };
 }
 
 module.exports = { generateEmailTemplate, generateMotivation };
