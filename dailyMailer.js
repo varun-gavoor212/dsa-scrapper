@@ -3,14 +3,14 @@ const nodemailer = require("nodemailer");
 const sql = require("mssql");
 
 const dbConfig = {
+  user: "githubuser",
+  password: "StrongPassword@123",
   server: "varun-sql-db.database.windows.net",
   database: "free-sql-db-4594076",
+  port: 1433,
   options: {
     encrypt: true,
-    trustServerCertificate: false,
-  },
-  authentication: {
-    type: "azure-active-directory-default"
+    trustServerCertificate: false
   }
 };
 
@@ -23,48 +23,64 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendDailyProblems() {
-  const pool = await sql.connect(dbConfig);
+  let pool;
 
-  const users = await pool.request().query("SELECT * FROM users");
+  try {
+    console.log("Connecting to DB...");
 
-  for (const user of users.recordset) {
-    const result = await pool.request().query(`
-      SELECT TOP 1 *
-      FROM problems
-      WHERE 
-        (${user.difficulty ? `difficulty='${user.difficulty}'` : "1=1"})
-      ORDER BY NEWID()
-    `);
+    pool = await sql.connect(dbConfig);
 
-    if (result.recordset.length === 0) continue;
+    const usersResult = await pool.request().query("SELECT * FROM users");
+    const users = usersResult.recordset;
 
-    const problem = result.recordset[0];
+    for (const user of users) {
+      const request = pool.request();
 
-    const motivation = user.wantsMotivation
-      ? "\n\n🔥 Keep pushing. Consistency beats motivation."
-      : "";
+      request.input("difficulty", sql.VarChar, user.difficulty || null);
 
-    await transporter.sendMail({
-      from: "varungour0@gmail.com",
-      to: user.email,
-      subject: "📌 Your Daily DSA Problem",
-      text: `
+      const problemResult = await request.query(`
+        SELECT TOP 1 *
+        FROM problems
+        WHERE (@difficulty IS NULL OR difficulty = @difficulty)
+        ORDER BY NEWID()
+      `);
+
+      if (!problemResult.recordset.length) continue;
+
+      const problem = problemResult.recordset[0];
+
+      const motivation = user.wantsMotivation
+        ? "\n\n🔥 Keep pushing. Consistency beats motivation."
+        : "";
+
+      await transporter.sendMail({
+        from: "varungour0@gmail.com",
+        to: user.email,
+        subject: "📌 Your Daily DSA Problem",
+        text: `
 Problem: ${problem.title}
 Category: ${problem.category}
 Difficulty: ${problem.difficulty}
 Link: ${problem.link}
 
 ${motivation}
-      `
-    });
+`
+      });
 
-    console.log(`✅ Sent to ${user.email}`);
+      console.log(`✅ Sent to ${user.email}`);
+    }
+
+  } catch (err) {
+    console.error("❌ Mailer Error:", err);
+  } finally {
+    if (pool) {
+      await pool.close();
+      console.log("DB connection closed");
+    }
   }
-
-  await pool.close();
 }
 
-cron.schedule("* * * * *", () => {
+cron.schedule("* * * * *", async () => {
   console.log("🚀 Running Daily Mailer...");
-  sendDailyProblems();
+  await sendDailyProblems();
 });

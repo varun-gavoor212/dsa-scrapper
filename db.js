@@ -1,36 +1,43 @@
 const sql = require("mssql");
 
 const config = {
-    server: "varun-sql-db.database.windows.net",
-    database: "free-sql-db-4594076",
-    options: {
-        encrypt: true,
-        trustServerCertificate: false,
-    },
-    authentication: {
-        type: "azure-active-directory-default"
-    }
+  user: "githubuser",
+  password: "StrongPassword@123",
+  server: "varun-sql-db.database.windows.net",
+  database: "free-sql-db-4594076",
+  port: 1433,
+  options: {
+    encrypt: true,
+    trustServerCertificate: false
+  }
 };
 
-async function setupDB() {
-    try {
-        console.log("Connecting to Azure SQL...");
-        const pool = await sql.connect(config);
+async function testDBConnection() {
+  let pool;
 
-        console.log("Creating problems table...");
+  try {
+    console.log("Connecting to Azure SQL...");
 
-        const res = await pool.request().query(`
-      select * from users;
+    pool = await sql.connect(config);
+
+    console.log("✅ Connected to database");
+
+    const result = await pool.request().query(`
+      SELECT * FROM users;
     `);
-        console.log(res);
 
-        console.log("✅ Table created (or already exists).");
+    console.log("Users table data:");
+    console.log(result.recordset);
 
-        await pool.close();
-    } catch (err) {
-        console.error("❌ Error:");
-        console.error(err.message);
+  } catch (err) {
+    console.error("❌ Database Error:");
+    console.error(err);
+  } finally {
+    if (pool) {
+      await pool.close();
+      console.log("Connection closed");
     }
+  }
 }
 
-setupDB();
+testDBConnection();
