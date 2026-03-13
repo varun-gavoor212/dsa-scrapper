@@ -37,6 +37,15 @@ async function sendDailyProblems() {
     const usersResult = await pool.request().query("SELECT * FROM users");
     const users = usersResult.recordset;
 
+    // Check if any user wants motivation
+    const anyWantsMotivation = users.some(user => user.wantsMotivation);
+    let dailyMotivation = '';
+    if (anyWantsMotivation) {
+      // Import the generateMotivation function
+      const { generateMotivation } = require("./emailTemplate");
+      dailyMotivation = await generateMotivation();
+    }
+
     for (const user of users) {
 
       const request = pool.request();
@@ -53,7 +62,7 @@ async function sendDailyProblems() {
 
       const problem = problemResult.recordset[0];
 
-      const emailContent = await generateEmailTemplate(problem, user.wantsMotivation);
+      const emailContent = generateEmailTemplate(problem, user.wantsMotivation ? dailyMotivation : '');
 
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
