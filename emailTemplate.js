@@ -120,4 +120,4 @@ DSA Daily Bot
 
 }
 
-module.exports = { generateEmailTemplate }
+module.exports = { generateEmailTemplate, generateMotivation };
