@@ -1,14 +1,13 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+const axios = require('axios');
 
 async function generateMotivation() {
   try {
-    const result = await model.generateContent(
-      "Write a short, energetic motivational message for someone solving DSA problems daily. Keep it under 100 characters."
-    );
-    return result.response.text().trim();
+    // Using a free quotes API - no API key required
+    const response = await axios.get('https://api.quotable.io/random?tags=motivational,famous-quotes');
+    const quote = response.data.content;
+    // Keep it under 100 characters and make it energetic
+    const shortQuote = quote.length > 100 ? quote.substring(0, 97) + '...' : quote;
+    return `💪 ${shortQuote}`;
   } catch (error) {
     console.error('Error generating motivation:', error);
     return '🔥 Keep pushing. Consistency beats motivation.'; // Fallback
