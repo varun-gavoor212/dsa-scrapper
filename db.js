@@ -1,10 +1,10 @@
 const sql = require("mssql");
 
 const config = {
-  user: "githubuser",
-  password: "StrongPassword@123",
-  server: "varun-sql-db.database.windows.net",
-  database: "free-sql-db-4594076",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
   port: 1433,
   options: {
     encrypt: true,
@@ -22,16 +22,12 @@ async function testDBConnection() {
 
     console.log("✅ Connected to database");
 
-    const result = await pool.request().query(`
-      SELECT * FROM users;
-    `);
+    const result = await pool.request().query("SELECT * FROM users");
 
-    console.log("Users table data:");
     console.log(result.recordset);
 
   } catch (err) {
-    console.error("❌ Database Error:");
-    console.error(err);
+    console.error("❌ Database Error:", err);
   } finally {
     if (pool) {
       await pool.close();

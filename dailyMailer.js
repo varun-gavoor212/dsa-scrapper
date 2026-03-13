@@ -1,12 +1,11 @@
-const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 const sql = require("mssql");
 
 const dbConfig = {
-  user: "githubuser",
-  password: "StrongPassword@123",
-  server: "varun-sql-db.database.windows.net",
-  database: "free-sql-db-4594076",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
   port: 1433,
   options: {
     encrypt: true,
@@ -17,8 +16,8 @@ const dbConfig = {
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "varungour0@gmail.com",
-    pass: "nllucvardnqcewir"
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -34,8 +33,8 @@ async function sendDailyProblems() {
     const users = usersResult.recordset;
 
     for (const user of users) {
-      const request = pool.request();
 
+      const request = pool.request();
       request.input("difficulty", sql.VarChar, user.difficulty || null);
 
       const problemResult = await request.query(`
@@ -54,7 +53,7 @@ async function sendDailyProblems() {
         : "";
 
       await transporter.sendMail({
-        from: "varungour0@gmail.com",
+        from: process.env.EMAIL_USER,
         to: user.email,
         subject: "📌 Your Daily DSA Problem",
         text: `
@@ -80,7 +79,5 @@ ${motivation}
   }
 }
 
-cron.schedule("* * * * *", async () => {
-  console.log("🚀 Running Daily Mailer...");
-  await sendDailyProblems();
-});
+// GitHub Actions runs this once
+sendDailyProblems();
