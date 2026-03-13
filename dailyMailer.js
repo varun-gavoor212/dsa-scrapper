@@ -13,6 +13,8 @@ const dbConfig = {
   }
 };
 
+console.log('db config', JSON.stringify(dbConfig))
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
