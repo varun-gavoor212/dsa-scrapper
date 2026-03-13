@@ -12,8 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@azure/identity": "^4.13.0",
-    "@google/generative-ai": "^0.24.1",
-    "axios": "^1.13.5",
+    "axios": "^1.13.6",
     "cheerio": "^1.2.0",
     "dotenv": "^17.3.1",
     "mssql": "^12.2.0",
