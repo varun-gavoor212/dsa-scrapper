@@ -21,11 +21,7 @@ async function generateMotivation() {
   }
 }
 
-async function generateEmailTemplate(problem, wantsMotivation) {
-  let motivation = '';
-  if (wantsMotivation) {
-    motivation = await generateMotivation();
-  }
+function generateEmailTemplate(problem, motivation) {
   return {
     subject: "📌 Your Daily DSA Problem",
     text: `
@@ -39,4 +35,4 @@ ${motivation ? '\n\n' + motivation : ''}
   };
 }
 
-module.exports = { generateEmailTemplate };
+module.exports = { generateEmailTemplate, generateMotivation };
