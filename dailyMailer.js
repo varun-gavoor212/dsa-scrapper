@@ -82,9 +82,66 @@ async function sendDailyProblems() {
       await pool.close();
       console.log("DB connection closed");
     }
-    process.exit(0);
   }
 }
 
-// GitHub Actions runs this once
-sendDailyProblems();
+async function sendProblemToEmail({ email, difficulty, wantsMotivation = false }) {
+  let pool;
+
+  try {
+    pool = await sql.connect(dbConfig);
+
+    const request = pool.request();
+    request.input("difficulty", sql.VarChar, difficulty || null);
+
+    const problemResult = await request.query(`
+      SELECT TOP 1 *
+      FROM problems
+      WHERE (@difficulty IS NULL OR difficulty = @difficulty)
+      ORDER BY NEWID()
+    `);
+
+    if (!problemResult.recordset.length) {
+      throw new Error('No problem available');
+    }
+
+    const problem = problemResult.recordset[0];
+
+    const { generateMotivation } = require("./emailTemplate");
+    const motivation = wantsMotivation ? await generateMotivation() : '';
+
+    const emailContent = generateEmailTemplate(problem, motivation);
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: emailContent.subject,
+      text: emailContent.text,
+      html: emailContent.html
+    });
+
+    return { ok: true, email, problem: problem.title };
+  } finally {
+    if (pool) await pool.close();
+  }
+}
+
+async function sendToEmailList({ emails = [], difficulty, wantsMotivation = false }) {
+  const results = [];
+  for (const email of emails) {
+    try {
+      const res = await sendProblemToEmail({ email, difficulty, wantsMotivation });
+      results.push({ email, ok: true, problem: res.problem });
+    } catch (err) {
+      results.push({ email, ok: false, error: err.message });
+    }
+  }
+  return results;
+}
+
+module.exports = { sendDailyProblems, sendProblemToEmail, sendToEmailList };
+
+// If run directly (node dailyMailer.js), execute immediately:
+if (require.main === module) {
+  sendDailyProblems();
+}
