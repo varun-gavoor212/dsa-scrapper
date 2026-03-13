@@ -78,6 +78,7 @@ ${motivation}
       await pool.close();
       console.log("DB connection closed");
     }
+    process.exit(0);
   }
 }
 
