@@ -6,14 +6,14 @@ const response = await axios.get("https://zenquotes.io/api/random");
 const quote = response.data[0];
 
 ```
-const formattedQuote = `"${quote.q}" - ${quote.a}`;
+const formattedQuote = '"' + quote.q + '" - ' + quote.a;
 
 const shortQuote =
   formattedQuote.length > 100
     ? formattedQuote.substring(0, 97) + "..."
     : formattedQuote;
 
-return `💪 ${shortQuote}`;
+return "💪 " + shortQuote;
 ```
 
 } catch (error) {
@@ -23,19 +23,22 @@ return "🔥 Keep pushing. Consistency beats motivation.";
 }
 
 function generateEmailTemplate(problem, motivation) {
-const plainText = `
-Problem: ${problem.title}
+
+const plainText =
+`Problem: ${problem.title}
 Category: ${problem.category}
 Difficulty: ${problem.difficulty}
 Link: ${problem.link}
 
-${motivation}
-`;
+${motivation}`;
 
 return {
-subject: `Today's DSA Challenge: ${problem.title}`,
+subject: "Today's DSA Challenge: " + problem.title,
 text: plainText,
+
+```
 html: `
+```
 
 <div style="margin:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;padding:40px">
 
