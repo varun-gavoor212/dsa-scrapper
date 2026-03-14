@@ -1,8 +1,8 @@
-require('dotenv').config();
+require("dotenv").config();
 
 const nodemailer = require("nodemailer");
 const sql = require("mssql");
-const { generateEmailTemplate } = require("./emailTemplate");
+const { generateEmailTemplate, generateMotivation } = require("./emailTemplate");
 
 const dbConfig = {
   user: process.env.DB_USER,
@@ -16,7 +16,7 @@ const dbConfig = {
   }
 };
 
-console.log('db config', JSON.stringify(dbConfig))
+console.log("DB Config Loaded");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -34,35 +34,47 @@ async function sendDailyProblems() {
 
     pool = await sql.connect(dbConfig);
 
-    const usersResult = await pool.request().query("SELECT * FROM users");
+    // Get all users
+    const usersResult = await pool.request().query(`
+      SELECT email, difficulty, wantsMotivation
+      FROM users
+    `);
+
     const users = usersResult.recordset;
 
+    if (!users.length) {
+      console.log("No users found");
+      return;
+    }
+
     // Check if any user wants motivation
-    const anyWantsMotivation = users.some(user => user.wantsMotivation);
-    let dailyMotivation = '';
+    const anyWantsMotivation = users.some(u => u.wantsMotivation);
+
+    let dailyMotivation = "";
     if (anyWantsMotivation) {
-      // Import the generateMotivation function
-      const { generateMotivation } = require("./emailTemplate");
       dailyMotivation = await generateMotivation();
     }
 
     for (const user of users) {
 
-      const request = pool.request();
-      request.input("difficulty", sql.VarChar, user.difficulty || null);
-
-      const problemResult = await request.query(`
-        SELECT TOP 1 *
+      // Get 2 random problems (any difficulty)
+      const problemsResult = await pool.request().query(`
+        SELECT TOP 2 *
         FROM problems
-        WHERE (@difficulty IS NULL OR difficulty = @difficulty)
         ORDER BY NEWID()
       `);
 
-      if (!problemResult.recordset.length) continue;
+      const problems = problemsResult.recordset;
 
-      const problem = problemResult.recordset[0];
+      if (!problems.length) {
+        console.log("No problems found");
+        continue;
+      }
 
-      const emailContent = generateEmailTemplate(problem, user.wantsMotivation ? dailyMotivation : '');
+      const emailContent = generateEmailTemplate(
+        problems,
+        user.wantsMotivation ? dailyMotivation : ""
+      );
 
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -72,19 +84,19 @@ async function sendDailyProblems() {
         html: emailContent.html
       });
 
-      console.log(`✅ Sent to ${user.email}`);
+      console.log(`✅ Sent 2 problems to ${user.email}`);
     }
 
-  } catch (err) {
-    console.error("❌ Mailer Error:", err);
+  } catch (error) {
+    console.error("❌ Mailer Error:", error);
   } finally {
     if (pool) {
       await pool.close();
       console.log("DB connection closed");
     }
+
     process.exit(0);
   }
 }
 
-// GitHub Actions runs this once
 sendDailyProblems();
