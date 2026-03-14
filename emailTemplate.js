@@ -19,37 +19,13 @@ async function generateMotivation() {
   }
 }
 
-function generateEmailTemplate(problem, motivation) {
+function generateEmailTemplate(problems, motivation) {
 
-  const plainText =
-`Problem: ${problem.title}
-Category: ${problem.category}
-Difficulty: ${problem.difficulty}
-Link: ${problem.link}
+  const problemHtml = problems.map((problem, index) => `
+  
+<div style="margin-top:30px">
 
-${motivation}`;
-
-  return {
-    subject: "Today's DSA Challenge: " + problem.title,
-    text: plainText,
-
-    html: `
-<div style="margin:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;padding:40px">
-
-<div style="max-width:700px;margin:auto;background:#111827;border-radius:12px;overflow:hidden">
-
-<a href="${problem.link}" style="display:block;text-decoration:none;">
-<img src="https://raw.githubusercontent.com/varun-gavoor212/dsa-scrapper/main/learning.png"
-style="width:100%;display:block;border-radius:12px 12px 0 0;">
-</a>
-
-<div style="padding:35px;color:#e5e7eb">
-
-<h2 style="margin-top:0;color:white">
-🚀 Daily Coding Mission
-</h2>
-
-<div style="font-size:26px;font-weight:bold;margin-bottom:10px">
+<div style="font-size:24px;font-weight:bold;margin-bottom:8px">
 ${problem.title}
 </div>
 
@@ -79,7 +55,7 @@ ${problem.difficulty}
 <a href="${problem.link}"
 style="
 display:inline-block;
-margin-top:25px;
+margin-top:20px;
 background:linear-gradient(135deg,#6366f1,#9333ea);
 padding:14px 24px;
 border-radius:8px;
@@ -88,9 +64,29 @@ text-decoration:none;
 font-weight:bold;
 ">
 
-⚡ Solve the Challenge
+⚡ Solve Problem ${index + 1}
 
 </a>
+
+</div>
+
+`).join("");
+
+  return {
+    subject: "🚀 Your Daily DSA Challenges",
+
+    html: `
+<div style="margin:0;background:#0f172a;font-family:Arial,Helvetica,sans-serif;padding:40px">
+
+<div style="max-width:700px;margin:auto;background:#111827;border-radius:12px;overflow:hidden">
+
+<div style="padding:35px;color:#e5e7eb">
+
+<h2 style="margin-top:0;color:white">
+🚀 Daily Coding Missions
+</h2>
+
+${problemHtml}
 
 <div style="
 margin-top:40px;
@@ -114,7 +110,7 @@ color:#9ca3af;
 background:#020617;
 ">
 
-Keep solving. Keep improving 💻
+Keep solving. Keep improving 💻  
 <br>
 DSA Daily Bot
 
@@ -126,5 +122,4 @@ DSA Daily Bot
 `
   };
 }
-
 module.exports = { generateEmailTemplate, generateMotivation };
