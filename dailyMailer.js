@@ -10,6 +10,16 @@ const dbConfig = {
   server: process.env.DB_SERVER,
   database: process.env.DB_DATABASE,
   port: 1433,
+
+  connectionTimeout: 30000,
+  requestTimeout: 30000,
+
+  pool: {
+    max: 5,
+    min: 0,
+    idleTimeoutMillis: 30000
+  },
+
   options: {
     encrypt: true,
     trustServerCertificate: false
@@ -18,8 +28,25 @@ const dbConfig = {
 
 console.log("DB Config Loaded");
 
+async function connectWithRetry(retries = 5, delayMs = 3000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const pool = await sql.connect(dbConfig);
+      console.log(`DB connected on attempt ${attempt}`);
+      return pool;
+    } catch (err) {
+      console.warn(`DB connection attempt ${attempt} failed: ${err.message}`);
+      if (attempt === retries) throw err;
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+  }
+}
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 5,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -32,7 +59,7 @@ async function sendDailyProblems() {
   try {
     console.log("Connecting to DB...");
 
-    pool = await sql.connect(dbConfig);
+    pool = await connectWithRetry();
 
     // Get all users
     const usersResult = await pool.request().query(`
